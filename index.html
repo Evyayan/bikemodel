@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kestrel 350 – Open the engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#061a2e;--line:#5fd8ff;--amber:#ffb347;--ink:#d9f4ff;--dim:#8fb6cb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{height:100%;margin:0;overflow:hidden;color:var(--ink);font:400 16px/1.5 Barlow,system-ui,sans-serif;
+background:radial-gradient(ellipse at 50% 40%,#0d3558 0%,var(--bg) 70%);}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(95,216,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(95,216,255,.07) 1px,transparent 1px);background-size:48px 48px}
+#stage{position:fixed;inset:0}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.brand{position:fixed;left:28px;top:calc(22px + env(safe-area-inset-top,0px));font:700 22px 'Barlow Condensed',sans-serif;letter-spacing:.04em;z-index:3}
+#crumbs{position:fixed;left:28px;top:calc(60px + env(safe-area-inset-top,0px));display:flex;flex-wrap:wrap;gap:4px;font-size:14px;z-index:3}
+#crumbs button{background:none;border:0;color:var(--line);font:inherit;padding:2px 4px;cursor:pointer}
+#crumbs button:hover{text-decoration:underline}
+#crumbs span{color:var(--dim);padding:2px 0}
+#crumbs b{font-weight:500;padding:2px 4px}
+#hero{position:fixed;left:28px;bottom:calc(36px + env(safe-area-inset-bottom,0px));max-width:420px;z-index:2;pointer-events:none}
+#hero h1{margin:0;font:700 clamp(54px,8vw,104px)/.92 'Barlow Condensed',sans-serif;letter-spacing:-.01em}
+#hero p{margin:14px 0 0;color:var(--dim);font-size:18px;max-width:34ch}
+#hot{position:fixed;left:0;top:0;z-index:3;display:flex;align-items:center;gap:10px;background:none;border:0;color:var(--amber);font:500 15px Barlow,sans-serif;cursor:pointer;padding:0}
+#hot i{width:34px;height:34px;border:2px solid var(--amber);border-radius:50%;display:block;margin:-17px 0 -17px -17px;animation:ping 1.8s ease-out infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,179,71,.6)}100%{box-shadow:0 0 0 22px rgba(255,179,71,0)}}
+#hot span{background:rgba(6,26,46,.8);border:1px solid var(--amber);padding:3px 10px;margin-left:26px}
+#panel{position:fixed;right:28px;top:calc(88px + env(safe-area-inset-top,0px));width:320px;max-height:calc(100% - 140px);overflow:auto;z-index:3;
+background:rgba(6,26,46,.78);backdrop-filter:blur(8px);border:1px solid rgba(95,216,255,.4);padding:20px;
+clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
+#panel h2{margin:0 0 4px;font:700 32px/1.05 'Barlow Condensed',sans-serif}
+#panel p{margin:0 0 14px;color:var(--dim);font-size:15px}
+#panel .it{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:0;border-top:1px solid rgba(95,216,255,.22);color:var(--ink);font:500 16px Barlow,sans-serif;padding:11px 4px;cursor:pointer}
+#panel .it:hover,#panel .it:focus-visible{background:rgba(95,216,255,.1);outline:none}
+#panel .it em{margin-left:auto;font-style:normal;color:var(--dim);font-size:13px}
+#panel .sw{width:10px;height:10px;border:2px solid;flex:none}
+#panel dl{margin:0 0 14px}#panel dt{color:var(--dim);font-size:13px;margin-top:10px}#panel dd{margin:0}
+#panel .back{border:1px solid var(--line);color:var(--line);justify-content:center;margin-top:6px}
+#tip{position:fixed;z-index:4;pointer-events:none;background:rgba(6,26,46,.9);border:1px solid var(--line);padding:3px 10px;font-size:14px;display:none;transform:translate(14px,14px)}
+button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+@media(max-width:720px){#panel{left:0;right:0;top:auto;bottom:0;width:auto;max-height:38%;clip-path:none;border-width:1px 0 0;padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px))}#panel h2{font-size:26px}#hero{bottom:calc(60px + env(safe-area-inset-bottom,0px))}.brand,#crumbs{left:18px}}
+@media(prefers-reduced-motion:reduce){#hot i{animation:none}}
+</style></head><body>
+<div id="stage"></div>
+<div class="brand">Kestrel 350</div>
+<nav id="crumbs" hidden aria-label="Breadcrumb"></nav>
+<div id="hero"><h1>Open the engine.</h1><p>A single-cylinder 350, drawn the way its engineers see it. Drag to turn the bike.</p></div>
+<button id="hot"><i></i><span>Click the engine</span></button>
+<aside id="panel" hidden></aside>
+<div id="tip"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const T=THREE,V=T.Vector3,$=id=>document.getElementById(id);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* ---------- data ---------- */
+const CATS=[
+{id:'top',n:'Top end',hex:'#ffb347',d:'Where fuel and air burn. The pressure of the burn pushes the piston down.'},
+{id:'bot',n:'Bottom end',hex:'#5fd8ff',d:'Turns the piston’s straight push into the spin that drives the bike.'},
+{id:'vt',n:'Valvetrain',hex:'#7dffc4',d:'Opens and closes the valves at exactly the right moment.'},
+{id:'tx',n:'Transmission',hex:'#b9a6ff',d:'Carries engine power to the rear wheel through selectable gears.'}];
+CATS.forEach(c=>c.col=new T.Color(c.hex));
+const cy=(r,h,x=0,y=0,z=0,s=24)=>new T.CylinderGeometry(r,r,h,s).translate(x,y,z);
+const cz=(r,h,x=0,y=0,z=0,s=24)=>new T.CylinderGeometry(r,r,h,s).rotateX(Math.PI/2).translate(x,y,z);
+const bx=(w,h,d,x=0,y=0,z=0)=>new T.BoxGeometry(w,h,d).translate(x,y,z);
+const hr=(R,t,x,y,z)=>new T.TorusGeometry(R,t,6,16).rotateX(Math.PI/2).translate(x,y,z);
+const PARTS=[
+{id:'head',c:'top',n:'Cylinder head',p:[0,2.65,0],e:[0,1,0],g:()=>[bx(1.4,.6,1.4),cy(.2,.4,-.35,.45,0,12),cy(.2,.4,.35,.45,0,12)],
+ d:'Caps the cylinder. It holds the valves, the spark plug and the intake and exhaust ports.',s:['Seals the combustion chamber','Cast aluminium alloy','Check for warping after overheating']},
+{id:'barrel',c:'top',n:'Cylinder barrel',p:[0,1.8,0],e:[0,.4,0],g:()=>[cy(.62,1.1,0,0,0,28),...[-.4,-.15,.1,.35].map(y=>cy(.82,.05,0,y,0,28))],
+ d:'The smooth tube the piston slides in. Fins on the outside shed heat to the air.',s:['Guides the piston and carries heat away','Aluminium with a hard-coated liner','Measure bore wear at major services']},
+{id:'piston',c:'top',n:'Piston',p:[0,1.5,0],e:[0,-.6,0],g:()=>[cy(.5,.5),cy(.52,.04,0,.2),cy(.52,.04,0,.12),cz(.1,.9,0,-.05,0,12)],
+ d:'Takes the force of each burn and passes it down to the crankshaft through the connecting rod.',s:['Turns gas pressure into motion','Forged aluminium with steel rings','Inspect rings and skirt for scoring']},
+{id:'plug',c:'top',n:'Spark plug',p:[0,3.25,0],e:[0,1.8,0],g:()=>[cy(.08,.55,0,0,0,12),cy(.14,.12,0,.3,0,6),cy(.05,.2,0,-.35,0,8)],
+ d:'Fires a spark at the top of each compression stroke to light the fuel and air mix.',s:['Ignites the mixture','Steel shell, ceramic insulator','Replace on schedule; its colour hints at tuning']},
+{id:'case',c:'bot',n:'Crankcase',p:[0,0,0],e:[0,-1.8,0],g:()=>[bx(2,1.4,1.7),bx(1.6,.35,1.5,0,-.85,0)],
+ d:'The strong housing that holds the crankshaft and keeps oil where it belongs.',s:['Supports and encloses the moving parts','Die-cast aluminium','Check the gasket seams for oil weeps']},
+{id:'crank',c:'bot',n:'Crankshaft',p:[0,0,0],e:[0,0,0],g:()=>[cz(.18,2,0,0,0,16),cz(.5,.12,0,0,-.45,24),cz(.5,.12,0,0,.45,24),cz(.1,.9,0,.4,0,12),cz(.2,.2,0,0,-.9,16),cz(.2,.2,0,0,.9,16)],
+ d:'Converts the piston’s up-and-down push into rotation. Counterweights smooth out vibration.',s:['Makes the engine’s rotating power','Forged steel','Check bearing play and runout']},
+{id:'rod',c:'bot',n:'Connecting rod',p:[0,.9,0],e:[0,1.2,0],g:()=>[bx(.16,1.2,.12),cz(.22,.15,0,-.6,0,16),cz(.12,.15,0,.6,0,12)],
+ d:'Links the piston to the crankshaft. It swings and stretches thousands of times a minute.',s:['Transfers force between piston and crank','Forged steel','Replace the big-end bearing at rebuild']},
+{id:'fly',c:'bot',n:'Flywheel',p:[0,0,1.1],e:[2,0,.5],g:()=>[cz(.85,.18,0,0,0,32),cz(.4,.2,0,0,0,20),cz(.25,.3,0,0,.15,12)],
+ d:'A heavy disc that stores spin between power strokes. Its magnets also generate electricity.',s:['Smooths power and charges the battery','Steel with magnets','Check the key and nut torque']},
+{id:'cam',c:'vt',n:'Camshaft',p:[0,2.75,0],e:[0,1.5,0],g:()=>[cz(.1,1.3,0,0,0,12),cz(.25,.14,.06,0,-.3,16),cz(.25,.14,.06,0,.3,16)],
+ d:'Its lobes push the valves open in time with the piston. It turns once for every two crank turns.',s:['Times the valve opening','Hardened steel','Check lobe wear and bearing noise']},
+{id:'rock',c:'vt',n:'Rocker arms',p:[0,2.55,0],e:[0,.4,0],g:()=>[bx(.12,.12,.7,-.4,0,0),bx(.12,.12,.7,.4,0,0),cz(.06,1.2,0,.12,0,8)],
+ d:'Small levers that pass the cam’s push on to the valve stems.',s:['Transfer cam motion to the valves','Forged steel, hardened pads','Adjust valve clearance on schedule']},
+{id:'valves',c:'vt',n:'Valves',p:[0,2.4,0],e:[0,-1.8,0],g:()=>[-.35,.35].flatMap(x=>[cy(.04,.8,x,0,0,8),cy(.22,.05,x,-.4,0,16)]),
+ d:'One lets the fresh mix in, the other lets burnt gas out. Each seals tight when closed.',s:['Open and close the ports','Steel; exhaust valve often sodium-filled','Check clearance and seat sealing']},
+{id:'spring',c:'vt',n:'Valve springs',p:[0,2.6,0],e:[0,-.9,0],g:()=>[-.35,.35].flatMap(x=>[0,1,2,3,4].map(i=>hr(.14,.02,x,i*.1-.2,0))),
+ d:'Snap each valve shut the moment the cam lets go.',s:['Return valves to their seats','Chrome-silicon steel wire','Replace if shorter than spec']},
+{id:'chain',c:'vt',n:'Cam chain',p:[0,1.3,-1.1],e:[-2.2,-.5,0],g:()=>[cz(.4,.1,0,-1.3,0),cz(.28,.1,0,1.4,0),bx(.05,2.7,.08,-.34,0,0),bx(.05,2.7,.08,.34,0,0)],
+ d:'A chain and two sprockets tie the crankshaft to the camshaft so the timing never drifts.',s:['Keeps the cam in step with the crank','Steel links with a tensioner pad','Listen for rattle; service the tensioner']},
+{id:'clutch',c:'tx',n:'Clutch',p:[-1.5,.5,-.8],e:[-1.2,1.6,0],g:()=>[cz(.75,.08,0,0,.25,28),cz(.2,.5,0,0,0,12),...[0,1,2,3,4].map(i=>cz(.62,.04,0,0,i*.08-.16,28))],
+ d:'A stack of plates that disconnects the engine from the gearbox so you can pull away or change gear.',s:['Connects and releases drive','Steel and friction plates','Check plate thickness and cable play']},
+{id:'gears',c:'tx',n:'Gearbox shafts',p:[-1.7,-.2,0],e:[-1.2,-.2,0],g:()=>[cz(.12,1.9,0,.25,0,12),cz(.12,1.9,0,-.25,0,12),...[0,1,2,3,4].flatMap(i=>[cz(.2+.05*i,.12,0,.25,-.7+i*.35),cz(.5-.05*i,.12,0,-.25,-.7+i*.35)])],
+ d:'Two shafts of paired gears. Each pair trades speed for pulling power.',s:['Sets the ratio between engine and wheel','Case-hardened steel','Listen for whine or missed shifts']},
+{id:'drum',c:'tx',n:'Shift drum',p:[-2.4,-.7,0],e:[-1.2,-1.8,0],g:()=>[cz(.28,1.3,0,0,0,20),...[-.45,-.15,.15,.45].map(z=>cz(.3,.04,0,0,z,20)),bx(.1,.1,.4,.35,0,-.2)],
+ d:'Turns as you move the shift lever. Its grooves guide the forks that slide the gears.',s:['Selects the gear','Steel with machined grooves','Check for stuck or missed shifts']}];
+/* ---------- scene ---------- */
+const stage=$('stage'),renderer=new T.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.appendChild(renderer.domElement);
+const scene=new T.Scene(),cam=new T.PerspectiveCamera(42,1,.1,100),root=new T.Group();scene.add(root);
+const grid=new T.GridHelper(16,16,0x1f5b7a,0x123a52);scene.add(grid);
+/* bike */
+const bike=new T.Group(),bm=[];root.add(bike);
+const lm=()=>{const m=new T.LineBasicMaterial({color:0x5fd8ff,transparent:true});bm.push(m);return m};
+const bl=(geo,x=0,y=0,z=0,th=25)=>{const l=new T.LineSegments(new T.EdgesGeometry(geo,th),lm());l.position.set(x,y,z);bike.add(l)};
+const seg=a=>bike.add(new T.LineSegments(new T.BufferGeometry().setFromPoints(a.map(p=>new V(...p))),lm()));
+[-2.1,2.1].forEach(x=>{
+ bl(new T.TorusGeometry(1,.2,10,56),x,1,0,20);bl(new T.TorusGeometry(.78,.03,6,56),x,1,0,20);bl(new T.CylinderGeometry(.12,.12,.3,12).rotateX(Math.PI/2),x,1,0);
+ const sp=[];for(let i=0;i<18;i++){const a=i/18*6.283;sp.push([x,1,0],[x+Math.cos(a)*.78,1+Math.sin(a)*.78,0])}seg(sp)});
+const fr=[[[-2.1,1],[-.5,1.05]],[[-2.1,1],[-.9,2.2]],[[1.2,2.35],[-.9,2.2]],[[1.2,2.35],[.3,.85]],[[.3,.85],[-.5,1.05]],[[-.5,1.05],[-.9,2.2]]],pts=[];
+fr.forEach(([a,b])=>[-.18,.18].forEach(z=>pts.push([a[0],a[1],z],[b[0],b[1],z])));
+[-.2,.2].forEach(z=>pts.push([1.3,2.75,z],[2.1,1,z],[1.2,2.2,z],[1.3,2.75,z]));
+pts.push([1.3,2.75,-.55],[1.3,2.75,.55],[1.3,2.75,-.55],[1.1,2.9,-.55],[1.3,2.75,.55],[1.1,2.9,.55]);seg(pts);
+bl(new T.BoxGeometry(1.3,.5,.55),.35,2.65,0);bl(new T.BoxGeometry(1.4,.18,.5),-1,2.4,0);bl(new T.BoxGeometry(.7,.14,.4),-2,2.55,0);
+bl(new T.SphereGeometry(.28,12,8),1.75,2.55,0,30);bl(new T.CylinderGeometry(.14,.1,2.3,12).rotateZ(Math.PI/2),-1.2,.6,.4,30);
+/* engine */
+const eng=new T.Group();root.add(eng);eng.scale.setScalar(.28);eng.position.set(.2,1.3,0);
+const hotObj=new T.Object3D();hotObj.position.set(.2,1.6,0);root.add(hotObj);
+const AMB=new T.Color('#ffb347'),WHT=new T.Color('#fff');
+PARTS.forEach(p=>{
+ p.cat=CATS.find(c=>c.id===p.c);p.obj=new T.Group();p.mats=[];p.pick=[];
+ p.p3=new V(...p.p);p.e3=new V(...p.e);
+ p.g().forEach(geo=>{
+  const a=new T.LineBasicMaterial({transparent:true}),b=new T.MeshBasicMaterial({transparent:true,depthWrite:false});
+  p.obj.add(new T.LineSegments(new T.EdgesGeometry(geo,25),a));
+  const m=new T.Mesh(geo,b);m.userData.p=p;p.obj.add(m);p.mats.push([a,1],[b,.09]);p.pick.push(m)});
+ p.obj.position.copy(p.p3);eng.add(p.obj);
+ p.o=p.to=1;p.tp=p.p3.clone();p.cur=AMB.clone();p.tc=AMB.clone()});
+/* ---------- state & targets ---------- */
+const st={lvl:0,cat:null,part:null};let hovC=null,hovP=null;
+let tS=.28,tP=new V(.2,1.3,0),tC=new V(5.5,2.8,8.5),tY=1.3,bT=.85,bo=.85,lookY=1.3;
+function apply(){
+ const L=st.lvl,cx=new V();let n=0;
+ PARTS.forEach(p=>{
+  const inC=st.cat===p.cat,hv=(L==1&&hovC===p.cat)||(L==2&&hovP===p);
+  let o=1,pos=p.p3.clone(),col=L==0?AMB:p.cat.col;
+  if(L==1&&hovC&&!hv)o=.35;
+  if(L==2){if(inC){pos.add(p.e3);if(hovP&&!hv)o=.5}else o=.05}
+  if(L==3)o=p===st.part?1:0;
+  p.to=o;p.tp=pos;p.tc=hv||(L==3&&p===st.part)?col.clone().lerp(WHT,.5):col;
+  if(L==1||(L==2&&inC)||(L==3&&p===st.part)){cx.add(pos);n++}});
+ if(n)cx.divideScalar(n);
+ tS=[.28,1,1,1.7][L];tY=L?1.6:1.3;
+ tP=L?new V(-cx.x*tS,tY-cx.y*tS,-cx.z*tS):new V(.2,1.3,0);
+ const f=innerWidth/innerHeight<.8?1.5:1;
+ tC=[new V(5.5,2.8,8.5),new V(3,3.4,9.8),new V(3,3.4,9.8),new V(1.5,2.6,7.5)][L].multiplyScalar(f);
+ tC.y=Math.max(tC.y,1);bT=L?.07:.85;ui()}
+/* ---------- UI ---------- */
+const panel=$('panel'),crumbs=$('crumbs'),hot=$('hot'),hero=$('hero'),tip=$('tip');
+function go(l){st.lvl=l;if(l<=2)st.part=null;if(l<=1)st.cat=null;hovC=hovP=null;apply()}
+function ui(){
+ const L=st.lvl;hero.hidden=L>0;panel.hidden=L==0;crumbs.hidden=L==0;
+ const cr=[['Kestrel 350'],['Engine'],[st.cat&&st.cat.n],[st.part&&st.part.n]].slice(0,L+1);
+ crumbs.innerHTML=cr.map((c,i)=>i==L?`<b>${c[0]}</b>`:`<button data-a="go:${i}">${c[0]}</button><span>›</span>`).join('');
+ let h='';
+ if(L==1)h=`<h2>Engine</h2><p>Four assemblies. Pick one to take it apart.</p>`+CATS.map(c=>`<button class="it" data-a="cat:${c.id}" data-h="c:${c.id}"><i class="sw" style="color:${c.hex}"></i>${c.n}<em>${PARTS.filter(p=>p.cat===c).length} parts</em></button>`).join('');
+ if(L==2)h=`<h2>${st.cat.n}</h2><p>${st.cat.d}</p>`+PARTS.filter(p=>p.cat===st.cat).map(p=>`<button class="it" data-a="part:${p.id}" data-h="p:${p.id}"><i class="sw" style="color:${st.cat.hex}"></i>${p.n}</button>`).join('');
+ if(L==3){const p=st.part;h=`<h2>${p.n}</h2><p>${p.d}</p><dl><dt>Job</dt><dd>${p.s[0]}</dd><dt>Material</dt><dd>${p.s[1]}</dd><dt>Service</dt><dd>${p.s[2]}</dd></dl><button class="it back" data-a="go:2">Back to ${st.cat.n}</button>`}
+ panel.innerHTML=h}
+panel.onclick=e=>{const b=e.target.closest('[data-a]');if(!b)return;const [k,v]=b.dataset.a.split(':');
+ if(k=='go')go(+v);if(k=='cat'){st.cat=CATS.find(c=>c.id===v);go2(2)}if(k=='part'){st.part=PARTS.find(p=>p.id===v);go2(3)}};
+function go2(l){st.lvl=l;hovC=hovP=null;apply()}
+crumbs.onclick=e=>{const b=e.target.closest('[data-a]');if(b)go(+b.dataset.a.split(':')[1])};
+panel.onmouseover=e=>{const b=e.target.closest('[data-h]');if(!b)return;const [k,v]=b.dataset.h.split(':');
+ if(k=='c')hovC=CATS.find(c=>c.id===v);else hovP=PARTS.find(p=>p.id===v);apply()};
+panel.onmouseleave=()=>{if(hovC||hovP){hovC=hovP=null;apply()}};
+hot.onclick=()=>go2(1);
+addEventListener('keydown',e=>{if(e.key=='Escape'&&st.lvl>0)go(st.lvl-1)});
+/* ---------- pointer ---------- */
+const rc=new T.Raycaster(),m2=new T.Vector2();let down=null,drag=false;
+function pick(e){const r=renderer.domElement.getBoundingClientRect();m2.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);rc.setFromCamera(m2,cam);
+ const h=rc.intersectObjects(PARTS.filter(p=>p.to>.5).flatMap(p=>p.pick));return h.length?h[0].object.userData.p:null}
+const cv=renderer.domElement;
+cv.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,m:0};drag=true;cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'});
+cv.addEventListener('pointermove',e=>{
+ if(down){root.rotation.y+=(e.clientX-down.x)*.006;down.m+=Math.abs(e.clientX-down.x)+Math.abs(e.clientY-down.y);down.x=e.clientX;down.y=e.clientY;return}
+ const p=pick(e),L=st.lvl;let nc=null,np=null;
+ if(p&&L==1)nc=p.cat;if(p&&L==2)np=p;
+ if(nc!==hovC||np!==hovP){hovC=nc;hovP=np;apply()}
+ cv.style.cursor=p&&L<3?'pointer':'grab';
+ tip.style.display=p&&L<3?'block':'none';
+ if(p){tip.textContent=L==0?'Engine':L==1?p.cat.n:p.n;tip.style.left=e.clientX+'px';tip.style.top=e.clientY+'px'}});
+cv.addEventListener('pointerup',e=>{const was=down&&down.m<6;down=null;drag=false;cv.style.cursor='grab';
+ if(!was)return;const p=pick(e),L=st.lvl;if(!p)return;
+ if(L==0)go2(1);else if(L==1){st.cat=p.cat;go2(2)}else if(L==2){st.part=p;go2(3)}});
+cv.addEventListener('pointerleave',()=>{tip.style.display='none'});
+/* ---------- loop ---------- */
+function resize(){renderer.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();apply()}
+addEventListener('resize',resize);
+const spd=[.0012,.0018,.0015,.004],pv=new V();
+function tick(){
+ const k=reduce?1:.08;
+ eng.scale.setScalar(eng.scale.x+(tS-eng.scale.x)*k);eng.position.lerp(tP,k);
+ cam.position.lerp(tC,reduce?1:.06);lookY+=(tY-lookY)*k;cam.lookAt(0,lookY,0);
+ bo+=(bT-bo)*k;bm.forEach(m=>m.opacity=bo);bike.visible=bo>.01;
+ PARTS.forEach(p=>{p.o+=(p.to-p.o)*k;p.obj.position.lerp(p.tp,k);p.cur.lerp(p.tc,Math.min(1,k*1.4));
+  p.mats.forEach(([m,f])=>{m.color.copy(p.cur);m.opacity=p.o*f});p.obj.visible=p.o>.01});
+ if(!drag&&!reduce)root.rotation.y+=spd[st.lvl];
+ if(st.lvl==0){hotObj.getWorldPosition(pv).project(cam);hot.style.display=pv.z<1?'flex':'none';
+  hot.style.transform=`translate(${(pv.x+1)/2*innerWidth}px,${(1-pv.y)/2*innerHeight}px)`}else hot.style.display='none';
+ renderer.render(scene,cam);requestAnimationFrame(tick)}
+resize();eng.scale.setScalar(tS);eng.position.copy(tP);cam.position.copy(tC);tick();
+</script></body></html>
